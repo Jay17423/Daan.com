@@ -1,0 +1,64 @@
+# =========================
+# Python / FastAPI ignores
+# =========================
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.log
+
+# Virtual environment
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Pytest / Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.cache/
+
+# Local configs
+*.env
+*.env.*
+.DS_Store
+
+# Alembic migrations cache
+migrations/__pycache__/
+
+# =========================
+# Node / React ignores
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Build output
+client/build/
+client/dist/
+
+# Local configs
+*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# =========================
+# General
+# =========================
+*.swp
+*.swo
+*.bak
+*.tmp
