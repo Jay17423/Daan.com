@@ -20,4 +20,16 @@ class UserRead(SQLModel):
 class UserLogin(SQLModel):
     email: str
     password: str
-    
+
+class UserProfileCreate(SQLModel):
+    full_name: Optional[str] = None
+    phone_number: str
+    local_address: str
+    city: str
+    state: str
+    country: str
+    pincode: str
+
+class UserProfileRead(UserProfileCreate):
+    id: int
+    user_id: int

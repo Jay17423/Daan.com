@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status,Response
 from sqlmodel import Session, select
 from app.config.db import engine
 from app.models.user import User
@@ -43,7 +43,7 @@ def signup(user: UserCreate):   #UserCreate ka mtlab hai client se jo data aayeg
         return db_user
 
 @router.post("/login")
-def login(user: UserLogin):
+def login(user: UserLogin, response: Response):
     with Session(engine) as session:
         db_user = session.exec(select(User).where(User.email == user.email)).first()
         if not db_user or not verify_password(user.password, db_user.hashed_password):
@@ -56,10 +56,22 @@ def login(user: UserLogin):
             data={"sub": db_user.email},
             expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         )
+        response.set_cookie(
+            key="access_token", 
+            value=f"Bearer {access_token}", 
+            httponly=True,      
+            max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            secure=False,  
+            samesite="lax"
+        )
         return {
             "access_token": access_token,
             "token_type": "bearer",
             "message": "Login successful",
             "user": UserRead.from_orm(db_user) 
         }
-    
+
+@router.post("/logout")
+def logout(response: Response):
+    response.delete_cookie("access_token")
+    return {"message": "Logout successful"}
