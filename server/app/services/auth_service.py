@@ -36,21 +36,31 @@ def generate_access_token(user: User) -> str:
     )
 
 
-def get_current_user(request: Request, session: Session = Depends(get_session), token: str = None) -> User:
+def get_current_user(
+    request: Request,
+    session: Session = Depends(get_session),
+    token: str = None
+) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
 
+    payload = None 
+
+
     if token:
         payload = verify_access_token(token, credentials_exception)
-    else:
+    
+  
+    elif request.cookies.get("access_token"):
         cookie_token = request.cookies.get("access_token")
-        if cookie_token and cookie_token.startswith("Bearer "):
+        if cookie_token.startswith("Bearer "):
             cookie_token = cookie_token.split(" ")[1]
             payload = verify_access_token(cookie_token, credentials_exception)
 
+   
     if not payload:
         raise credentials_exception
 
@@ -61,4 +71,5 @@ def get_current_user(request: Request, session: Session = Depends(get_session), 
     user = get_user_by_email(session, email)
     if not user:
         raise credentials_exception
+
     return user

@@ -1,7 +1,10 @@
+from datetime import datetime, timedelta,timezone
 from fastapi import APIRouter, Depends, HTTPException, Response
 from app.services.user_service import create_user
-from sqlmodel import Session
-from app.schema.user import UpdatePasswordRequest, UserCreate, UserRead, UserLogin
+from app.core.email import EmailService, get_email_service
+from app.utils.otp import generate_otp
+from sqlmodel import Session,select
+from app.schema.user import ForgotPasswordRequest, ResetPasswordRequest, UpdatePasswordRequest, UserCreate, UserRead, UserLogin
 from app.config.db import get_session
 from app.services.auth_service import get_current_user, signup_user, login_user, generate_access_token
 from app.config.settings import settings
@@ -58,4 +61,61 @@ def update_password(
 
     return {"message": "Password updated successfully"}
 
+
+@router.post("/forgot-password")
+async def forgot_password(
+    request: ForgotPasswordRequest,  
+    session: Session = Depends(get_session),
+    email_service: EmailService = Depends(get_email_service)
+):
+    statement = select(User).where(User.email == request.email)
+    user = session.exec(statement).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    otp = generate_otp()
+    user.reset_otp = otp
+    user.reset_otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=5)
+    session.add(user)
+    session.commit()
+
+    email_service.send_email(
+        user.email,
+        "Password Reset OTP",
+        f"Your OTP is {otp}. It will expire in 5 minutes."
+    )
+
+    return {"msg": "OTP sent to your email"}
+
+
+@router.post("/reset-password")
+async def reset_password(
+    request: ResetPasswordRequest,
+    session: Session = Depends(get_session)
+):
+    email = request.email
+    otp = request.otp
+    new_password = request.new_password
+
+    statement = select(User).where(User.email == email)
+    user = session.exec(statement).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not user.reset_otp or user.reset_otp != otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+
+    if user.reset_otp_expiry and user.reset_otp_expiry < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="OTP expired")
+
+    user.hashed_password = hash_password(new_password)
+    user.reset_otp = None
+    user.reset_otp_expiry = None
+    user.updated_at = datetime.now(timezone.utc)
+
+    create_user(session, user)
+
+    return {"msg": "Password reset successful"}
+
+    return {"msg": "Password reset successful"}
 

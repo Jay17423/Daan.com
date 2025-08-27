@@ -1,4 +1,6 @@
 from datetime import datetime
+
+from pydantic import EmailStr
 from sqlmodel import SQLModel
 from typing import Optional
 
@@ -38,3 +40,11 @@ class UpdatePasswordRequest(SQLModel):
     curr_password: str
     new_password: str
     confirm_password: str
+
+class ForgotPasswordRequest(SQLModel):
+    email: str
+
+class ResetPasswordRequest(SQLModel):
+    email: EmailStr
+    otp: str
+    new_password: str
