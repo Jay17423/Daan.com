@@ -8,6 +8,7 @@ from datetime import timedelta
 from app.models.user import User
 from app.services.user_service import get_user_by_email, get_user_by_username
 from app.config.db import get_session
+from app.services.user_service import create_user
 
 def signup_user(session: Session, username: str, email: str, password: str) -> User:
     if get_user_by_email(session, email):

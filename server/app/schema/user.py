@@ -33,3 +33,8 @@ class UserProfileCreate(SQLModel):
 class UserProfileRead(UserProfileCreate):
     id: int
     user_id: int
+
+class UpdatePasswordRequest(SQLModel):
+    curr_password: str
+    new_password: str
+    confirm_password: str
