@@ -1,75 +1,31 @@
-from fastapi import APIRouter, HTTPException, status,Response
-from sqlmodel import Session, select
-from app.config.db import engine
-from app.models.user import User
+from fastapi import APIRouter, Depends, Response
+from sqlmodel import Session
 from app.schema.user import UserCreate, UserRead, UserLogin
-from app.utils.security import hash_password, verify_password
-from app.config.jwt import create_access_token, verify_access_token
-from datetime import datetime, timedelta
-
+from app.config.db import get_session
+from app.services.auth_service import signup_user, login_user, generate_access_token
 from app.config.settings import settings
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
-
-@router.post("/signup", response_model=UserRead) # userRead ka mtlab hai ki jab user signup karega, to response me UserRead schema ke according data milega
-def signup(user: UserCreate):   #UserCreate ka mtlab hai client se jo data aayega, wo UserCreate schema ke according hoga
-    with Session(engine) as session:
-       
-        existing_email = session.exec(select(User).where(User.email == user.email)).first()
-        if existing_email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already registered"
-            )
-
-        
-        existing_username = session.exec(select(User).where(User.username == user.username)).first()
-        if existing_username:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username already taken"
-            )
-
-        db_user = User(
-            username=user.username,
-            email=user.email,
-            hashed_password=hash_password(user.password) 
-        )
-
-        session.add(db_user)
-        session.commit()
-        session.refresh(db_user)
-        return db_user
+@router.post("/signup", response_model=UserRead)
+def signup(user: UserCreate, session: Session = Depends(get_session)):
+    db_user = signup_user(session, user.username, user.email, user.password)
+    return db_user
 
 @router.post("/login")
-def login(user: UserLogin, response: Response):
-    with Session(engine) as session:
-        db_user = session.exec(select(User).where(User.email == user.email)).first()
-        if not db_user or not verify_password(user.password, db_user.hashed_password):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid email or password"
-            )
-        
-        access_token = create_access_token(
-            data={"sub": db_user.email},
-            expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        )
-        response.set_cookie(
-            key="access_token", 
-            value=f"Bearer {access_token}", 
-            httponly=True,      
-            max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-            secure=False,  
-            samesite="lax"
-        )
-        return {
-            "access_token": access_token,
-            "token_type": "bearer",
-            "message": "Login successful",
-            "user": UserRead.from_orm(db_user) 
-        }
+def login(user: UserLogin, response: Response, session: Session = Depends(get_session)):
+    db_user = login_user(session, user.email, user.password)
+    token = generate_access_token(db_user)
+
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {token}",
+        httponly=True,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        secure=False,
+        samesite="lax"
+    )
+    return {"access_token": token, "token_type": "bearer", "message": "Login successful", "user": UserRead.from_orm(db_user)}
 
 @router.post("/logout")
 def logout(response: Response):
