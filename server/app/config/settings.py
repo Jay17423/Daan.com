@@ -12,5 +12,5 @@ class Settings(BaseSettings):
     EMAIL_SENDER:str = os.getenv("EMAIL_SENDER")
     EMAIL_PASSWORD:str = os.getenv("EMAIL_PASSWORD")
 
-
+    
 settings = Settings()

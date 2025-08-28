@@ -5,6 +5,7 @@ from sqlmodel import SQLModel,Field,create_engine, Session
 from typing import Optional
 from app.models.user import User
 from app.models.user import UserProfile
+from app.models.post import Post
 
 
 
