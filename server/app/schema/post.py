@@ -38,3 +38,18 @@ class PostResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ClaimedPostInfo(BaseModel):
+    post_id: int
+    heading: str
+    description: str
+    claimed_user_id: int
+    claimed_username: str
+    claimed_email: str
+    full_name: Optional[str] = None
+    phone_number: Optional[str] = None
+    local_address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    country: Optional[str] = None
+    pincode: Optional[str] = None

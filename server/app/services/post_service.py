@@ -128,3 +128,4 @@ def auto_reactivate_expired_posts(session: Session) -> None:
         session.add(post)
 
     session.commit()
+
