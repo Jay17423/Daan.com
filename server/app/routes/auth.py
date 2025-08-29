@@ -29,7 +29,7 @@ def login(user: UserLogin, response: Response, session: Session = Depends(get_se
         httponly=True,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         secure=False,
-        samesite="lax"
+        samesite="none"  # will change to "lax" when deployment is fully migrated to HTTPS
     )
     return {"access_token": token, "token_type": "bearer", "message": "Login successful", "user": UserRead.from_orm(db_user)}
 
