@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from app.routes import auth   
 from app.routes import profile
 from app.routes import post
+from app.config import cloudinary_config
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

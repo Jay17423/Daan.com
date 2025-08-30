@@ -2,6 +2,8 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 from enum import Enum
+from fastapi import Form, File, UploadFile
+from typing import Optional
 
 
 class ItemType(str, Enum):
@@ -10,6 +12,18 @@ class ItemType(str, Enum):
     ELECTRONICS = "electronics"
     OTHER = "other"
 
+class PostCreateForm:
+    def __init__(
+        self,
+        heading: str = Form(...),
+        description: str = Form(...),
+        item_type: ItemType = Form(...),
+        file: Optional[UploadFile] = File(None)
+    ):
+        self.heading = heading
+        self.description = description
+        self.item_type = item_type
+        self.file = file
 
 class PostCreate(BaseModel):
     heading: str
