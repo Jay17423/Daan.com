@@ -12,7 +12,7 @@ from app.services.post_service import (
     confirm_claim,
     delete_post,
 )
-from app.schema.post import  ClaimedPostInfo, PostCreate, PostResponse
+from app.schema.post import  ClaimedPostInfo, PostCreate, PostCreateForm, PostResponse
 from app.models.user import User, UserProfile
 
 router = APIRouter(prefix="/posts", tags=["Posts"])
@@ -21,15 +21,23 @@ router = APIRouter(prefix="/posts", tags=["Posts"])
 # Create new post
 @router.post("/", response_model=PostResponse)
 def add_post(
-    post_data: PostCreate,
+    post_form: PostCreateForm = Depends(),
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    return create_post(session, current_user.id, post_data)
+
+    post_data = PostCreate(
+        heading=post_form.heading,
+        description=post_form.description,
+        item_type=post_form.item_type,
+        image_url=""  # fill after upload
+    )
+
+    return create_post(session, current_user.id, post_data, post_form.file)
+
 
 
 # Get posts by city
-# Get posts in the current user's city
 @router.get("/feed", response_model=list[PostResponse])
 def list_posts_for_user(
     current_user: User = Depends(get_current_user),

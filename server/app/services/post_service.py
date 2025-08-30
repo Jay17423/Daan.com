@@ -1,5 +1,6 @@
+import cloudinary.uploader
 from datetime import datetime, timedelta, timezone
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, UploadFile
 from sqlmodel import Session, select
 from app.models.post import Post
 from app.models.user import UserProfile
@@ -7,7 +8,7 @@ from app.schema.post import PostCreate
 
 
 # Create Post
-def create_post(session: Session, user_id: int, post_data: PostCreate) -> dict:
+def create_post(session: Session, user_id: int, post_data: PostCreate, file: UploadFile = None) -> dict:
     profile = session.exec(
         select(UserProfile).where(UserProfile.user_id == user_id)
     ).first()
@@ -18,11 +19,29 @@ def create_post(session: Session, user_id: int, post_data: PostCreate) -> dict:
             detail="Complete your profile before posting"
         )
 
+    # Default image_url from payload
+    image_url = post_data.image_url
+
+    # If file is uploaded, push to Cloudinary
+    if file:
+        try:
+            upload_result = cloudinary.uploader.upload(
+                file.file,
+                folder="posts",
+                resource_type="image"
+            )
+            image_url = upload_result.get("secure_url")
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Image upload failed: {str(e)}"
+            )
+
     post = Post(
         user_id=user_id,
         heading=post_data.heading,
         description=post_data.description,
-        image_url=post_data.image_url,
+        image_url=image_url,
         item_type=post_data.item_type,
         city=profile.city
     )
@@ -32,7 +51,7 @@ def create_post(session: Session, user_id: int, post_data: PostCreate) -> dict:
     session.refresh(post)
 
     return {
-        **post.model_dump(),  
+        **post.model_dump(),
         "city": profile.city
     }
 
