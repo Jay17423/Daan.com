@@ -46,6 +46,9 @@ def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    print("#"*50)
+    print(token)
+    print("#"*50)
 
     payload = None 
 

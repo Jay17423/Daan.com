@@ -44,6 +44,7 @@ def list_posts_for_user(
     session: Session = Depends(get_session),
 ):
     # Get user profile
+  
     profile = session.exec(
         select(UserProfile).where(UserProfile.user_id == current_user.id)
     ).first()
